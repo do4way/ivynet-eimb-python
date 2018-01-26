@@ -5,6 +5,13 @@ import uuid
 import json
 from datetime import datetime as date
 from collections import OrderedDict
+from dateutil.tz import *
+
+
+def datetimeNowISO8601():
+    return date.now(tzlocal()).replace(microsecond=0).isoformat()
+
+
 
 class EimbEncoder(json.JSONEncoder) :
     def default(self, obj) :
@@ -33,7 +40,7 @@ class Package :
         self.ID = ID
         self.Payload = payload
         if created_at == None:
-            created_at = str(date.now().isoformat())
+            created_at =  datetimeNowISO8601()
         self.CreatedAt = created_at
         self.channel_key = channel_key
         self.working_channel_key = working_channel_key
@@ -64,8 +71,8 @@ class Package :
         if self.redis == None :
             raise Exception("Package not contained")
         try:
-            self.redis.lrem(self.working_channel_key, 0, str(self))
-            self.failed_at = str(date.now().isoformat())
+            self.redis.lrem(self.working_channel_key, 0, self.orig_str)
+            self.failed_at = datetimeNowISO8601()
             self.redis.rpush(self.failed_channel_key, self.get_failed_package())
         except Exception as inst:
             raise Exception("Failed to send failed message.", type(inst), inst)
@@ -81,6 +88,8 @@ def create_package(payload, pckID=None) :
     try :
         if isinstance(payload, basestring):
             msg = payload
+        elif isinstance(payload, list):
+            msg = json.dumps(payload)
         else:
             msg = json.dumps(payload.__dict__, sort_keys=True)
     except Exception as inst :
