@@ -90,6 +90,8 @@ def create_package(payload, pckID=None) :
             msg = payload
         elif isinstance(payload, list):
             msg = json.dumps(payload)
+        elif isinstance(payload, dict):
+            msg = json.dumps(payload)
         else:
             msg = json.dumps(payload.__dict__, sort_keys=True)
     except Exception as inst :
